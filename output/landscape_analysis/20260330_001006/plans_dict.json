@@ -1,0 +1,161 @@
+{
+  "condition": "gastric or gastroesophageal junction cancer",
+  "treatment": "targeted therapies or immunotherapies",
+  "fda_approval_route": {
+    "library_key": "gastric_cancer",
+    "library_name": "Gastric cancer / gastroesophageal junction cancer",
+    "matched_terms": [
+      "gastric cancer",
+      "gastroesophageal junction cancer"
+    ],
+    "reason": "The context specifically mentions gastric or gastroesophageal junction cancer, making this library the most relevant choice.",
+    "approved_drugs": [
+      "Avapritinib",
+      "Ayvakit",
+      "Gleevec",
+      "Imatinib Mesylate",
+      "Imkeldi",
+      "Qinlock",
+      "Regorafenib",
+      "Ripretinib",
+      "Stivarga",
+      "Sunitinib Malate",
+      "Sutent",
+      "Capecitabine",
+      "Cyramza",
+      "Docetaxel",
+      "Doxorubicin Hydrochloride",
+      "Enhertu",
+      "DS-8201a",
+      "5-FU",
+      "Fam-Trastuzumab Deruxtecan-nxki",
+      "Fluorouracil Injection",
+      "Herceptin",
+      "Keytruda",
+      "Lonsurf",
+      "Mitomycin",
+      "Nivolumab",
+      "Nivolumab and Hyaluronidase-nvhy",
+      "Opdivo",
+      "Opdivo Qvantig",
+      "Pembrolizumab",
+      "Ramucirumab",
+      "Taxotere",
+      "Tevimbra",
+      "Tislelizumab-jsgr",
+      "Trastuzumab",
+      "Trifluridine and Tipiracil Hydrochloride",
+      "Vyloy",
+      "Xeloda",
+      "Zolbetuximab-clzb",
+      "FU-LV",
+      "TPF",
+      "XELIRI",
+      "Afinitor",
+      "Afinitor Disperz",
+      "Everolimus",
+      "Lanreotide Acetate",
+      "Somatuline Depot"
+    ],
+    "used_fallback": false
+  },
+  "function_plans": [
+    {
+      "filter_name": "include_gastric_cancer_trials",
+      "logical_operator": "default",
+      "conditions": [
+        {
+          "fields_to_attend": [
+            "Conditions",
+            "Summary",
+            "Eligibility"
+          ],
+          "llm_instruction": "Identify if the trial studies gastric cancer or gastroesophageal junction cancer. Return 'Yes' if either condition is mentioned, otherwise return 'No'. Do not explain your answer.",
+          "comparison": "equal_to",
+          "target_value": "Yes"
+        }
+      ]
+    },
+    {
+      "filter_name": "targeted_or_immunotherapy_inclusion",
+      "logical_operator": "default",
+      "conditions": [
+        {
+          "fields_to_attend": [
+            "Interventions"
+          ],
+          "llm_instruction": "Extract and return the names of interventions that are classified as targeted therapies or immunotherapies. Return as a Python list or a single comma-separated string.",
+          "comparison": "presence_match",
+          "target_value": "targeted therapy or immunotherapy"
+        }
+      ]
+    },
+    {
+      "filter_name": "include_survival_outcomes",
+      "logical_operator": "default",
+      "conditions": [
+        {
+          "fields_to_attend": [
+            "Primary Outcome",
+            "Secondary Outcome",
+            "Summary"
+          ],
+          "llm_instruction": "Identify if the trial reports survival outcomes such as progression-free survival (PFS) or overall survival (OS). Return 'Yes' if such outcomes are reported, otherwise return 'No'. Do not explain your answer.",
+          "comparison": "equal_to",
+          "target_value": "Yes"
+        }
+      ]
+    },
+    {
+      "filter_name": "biomarker_stratified_population_inclusion",
+      "logical_operator": "default",
+      "conditions": [
+        {
+          "fields_to_attend": [
+            "Eligibility",
+            "Summary"
+          ],
+          "llm_instruction": "Identify if the trial enrolls biomarker-stratified populations, such as HER2-positive, MSI-H, or PD-L1 positive. Return 'Yes' if any of these biomarkers are mentioned, otherwise return 'No'. Do not explain your answer.",
+          "comparison": "equal_to",
+          "target_value": "Yes"
+        }
+      ]
+    },
+    {
+      "filter_name": "exclude_phase_iii_few_enrollment",
+      "logical_operator": "sequential",
+      "conditions": [
+        {
+          "fields_to_attend": [
+            "Phase"
+          ],
+          "llm_instruction": "Check if the trial is in Phase III. Return 'Yes' if it is Phase III, otherwise return 'No'. Do not explain your answer.",
+          "comparison": "equal_to",
+          "target_value": "Yes"
+        },
+        {
+          "fields_to_attend": [
+            "Enrollment"
+          ],
+          "llm_instruction": "Extract the number of enrolled patients. Return a number only. Do not include units or explanations.",
+          "comparison": "greater_than",
+          "target_value": 100
+        }
+      ]
+    },
+    {
+      "filter_name": "include_fda_approved_drugs",
+      "logical_operator": "default",
+      "conditions": [
+        {
+          "fields_to_attend": [
+            "Interventions"
+          ],
+          "llm_instruction": "Extract and return the names of drugs or interventions under investigation as a Python list. Do not include any other information.",
+          "comparison": "in_list",
+          "membership_list_name": "FDA_APPROVAL_DRUG_ACTIVE"
+        }
+      ]
+    }
+  ]
+}

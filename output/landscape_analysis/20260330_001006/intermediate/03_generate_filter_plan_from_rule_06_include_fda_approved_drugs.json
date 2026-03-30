@@ -1,0 +1,17 @@
+{
+  "rule_description": "Include trials where the drugs under investigation are FDA-approved.",
+  "plan": {
+    "filter_name": "include_fda_approved_drugs",
+    "logical_operator": "default",
+    "conditions": [
+      {
+        "fields_to_attend": [
+          "Interventions"
+        ],
+        "llm_instruction": "Extract and return the names of drugs or interventions under investigation as a Python list. Do not include any other information.",
+        "comparison": "in_list",
+        "membership_list_name": "FDA_APPROVAL_DRUG_ACTIVE"
+      }
+    ]
+  }
+}

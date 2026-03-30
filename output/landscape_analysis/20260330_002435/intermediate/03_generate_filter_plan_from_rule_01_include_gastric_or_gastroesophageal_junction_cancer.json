@@ -1,0 +1,19 @@
+{
+  "rule_description": "Include trials that study gastric cancer or gastroesophageal junction cancer.",
+  "plan": {
+    "filter_name": "include_gastric_or_gastroesophageal_junction_cancer",
+    "logical_operator": "default",
+    "conditions": [
+      {
+        "fields_to_attend": [
+          "Conditions",
+          "Summary",
+          "Eligibility"
+        ],
+        "llm_instruction": "Check if the trial studies gastric cancer or gastroesophageal junction cancer. Return 'Yes' if either condition is mentioned, otherwise return 'No'. Do not explain your answer.",
+        "comparison": "equal_to",
+        "target_value": "Yes"
+      }
+    ]
+  }
+}

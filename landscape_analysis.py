@@ -1,12 +1,16 @@
-import os
+﻿import os
 import sys
 import json
 import time
 import re
+import ast
+import shutil
 import requests
 import pandas as pd
 from typing import Any, Dict, List, Optional, Tuple, Callable
 import openai
+from agent.fda_approval_drug import DEFAULT_FDA_LIBRARY_KEY, FDA_APPROVAL_DRUG, get_library_entry
+from agent.fda_router import route_fda_approval_drug_library
 def _script_dir() -> str:
     try:
         return os.path.dirname(os.path.abspath(__file__))
@@ -14,10 +18,10 @@ def _script_dir() -> str:
         return os.getcwd()
 
 API_KEY_PATH = os.path.join(_script_dir(), "api_key.txt")
-OUTPUT_DIR = os.path.join(_script_dir(), "landscape_result")
-OUTPUT_ROOT_DIR = os.path.join(_script_dir(), "output", "landscape_analysis")
+OUTPUT_ROOT_DIR = os.path.join(_script_dir(), "output")
+OUTPUT_DIR = os.path.join(OUTPUT_ROOT_DIR, "landscape_result_pending")
 RUN_OUTPUT_ID = time.strftime("%Y%m%d_%H%M%S")
-RUN_OUTPUT_DIR = os.path.join(OUTPUT_ROOT_DIR, RUN_OUTPUT_ID)
+RUN_OUTPUT_DIR = os.path.join(OUTPUT_DIR, "runs", RUN_OUTPUT_ID)
 api_key_openai: str = ""
 # Registry to store LLM-generated Python functions
 llm_rule_registry: Dict[str, Callable] = {}
@@ -31,21 +35,21 @@ artifact_counters: Dict[str, int] = {
 _KEYS = ("overall survival", "progression-free survival", "os", "pfs")
 EP_INSTR_TMPL = (
     "From the JSON block and outcome descriptions below, extract any numeric result for {ep}. "
-    "This could be counts, rates, medians, hazard ratios, confidence intervals, or p‑values. "
-    "Return a concise summary string—e.g., 'median OS 18.4 mo, HR 0.72 (95% CI 0.55‑0.95)' or "
+    "This could be counts, rates, medians, hazard ratios, confidence intervals, or pâ€‘values. "
+    "Return a concise summary stringâ€”e.g., 'median OS 18.4Â mo, HR 0.72 (95%Â CI 0.55â€‘0.95)' or "
     "'9/11 vs 3/5 participants'. If you cannot find any result, return 'Not Available'."
 )
-FDA_approved_drugs_gastric = [
-    "Avapritinib", "Ayvakit", "Gleevec", "Imatinib Mesylate", "Imkeldi",
-    "Qinlock", "Regorafenib", "Ripretinib", "Stivarga", "Sunitinib Malate",
-    "Sutent", "Capecitabine", "Cyramza", "Docetaxel", "Doxorubicin Hydrochloride",
-    "Enhertu", "DS-8201a", "5-FU", "Fam-Trastuzumab Deruxtecan-nxki", "Fluorouracil Injection", "Herceptin",
-    "Keytruda", "Lonsurf", "Mitomycin", "Nivolumab", "Nivolumab and Hyaluronidase-nvhy",
-    "Opdivo", "Opdivo Qvantig", "Pembrolizumab", "Ramucirumab", "Taxotere",
-    "Tevimbra", "Tislelizumab-jsgr", "Trastuzumab", "Trifluridine and Tipiracil Hydrochloride", "Vyloy",
-    "Xeloda", "Zolbetuximab-clzb", "FU-LV", "TPF", "XELIRI",
-    "Afinitor", "Afinitor Disperz", "Everolimus", "Lanreotide Acetate", "Somatuline Depot"
-]
+_DEFAULT_FDA_ENTRY = get_library_entry(DEFAULT_FDA_LIBRARY_KEY)
+FDA_APPROVAL_DRUG_ACTIVE: List[str] = list(_DEFAULT_FDA_ENTRY["drugs"])
+ACTIVE_FDA_APPROVAL_ROUTE: Dict[str, Any] = {
+    "library_key": DEFAULT_FDA_LIBRARY_KEY,
+    "library_name": _DEFAULT_FDA_ENTRY["label"],
+    "approved_drugs": list(FDA_APPROVAL_DRUG_ACTIVE),
+    "matched_terms": [],
+    "reason": "Default gastric cancer FDA approval library selected before routing.",
+    "used_fallback": True,
+}
+FDA_approved_drugs_gastric = list(_DEFAULT_FDA_ENTRY["drugs"])
 
 
 def _read_input(prompt: str, required: bool = False) -> str:
@@ -84,6 +88,105 @@ def _sanitize_filename(value: str) -> str:
     return cleaned.strip("._") or "artifact"
 
 
+def _condition_output_folder_name(condition: str) -> str:
+    cleaned_condition = _sanitize_filename(condition).lower()
+    if not cleaned_condition or cleaned_condition == "artifact":
+        return "landscape_result_unknown_condition"
+    return f"landscape_result_{cleaned_condition}"
+
+
+def _write_output_text(filename: str, text: str) -> str:
+    path = os.path.join(OUTPUT_DIR, filename)
+    _ensure_parent_dir(path)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
+    return path
+
+
+def _refresh_run_metadata() -> None:
+    _write_output_text("latest_run.txt", RUN_OUTPUT_DIR + "\n")
+    _write_json_artifact(
+        "run_metadata.json",
+        {
+            "output_dir": OUTPUT_DIR,
+            "run_output_dir": RUN_OUTPUT_DIR,
+            "landscape_result_dir": OUTPUT_DIR,
+        },
+    )
+
+
+def _set_output_dir_for_condition(condition: str) -> None:
+    global OUTPUT_DIR
+    global RUN_OUTPUT_DIR
+
+    previous_output_dir = OUTPUT_DIR
+    previous_run_output_dir = RUN_OUTPUT_DIR
+    target_output_dir = os.path.join(
+        OUTPUT_ROOT_DIR,
+        _condition_output_folder_name(condition),
+    )
+    target_run_output_dir = os.path.join(target_output_dir, "runs", RUN_OUTPUT_ID)
+
+    if previous_output_dir == target_output_dir and previous_run_output_dir == target_run_output_dir:
+        _refresh_run_metadata()
+        return
+
+    if previous_run_output_dir != target_run_output_dir and os.path.exists(previous_run_output_dir):
+        os.makedirs(os.path.dirname(target_run_output_dir), exist_ok=True)
+        if os.path.exists(target_run_output_dir):
+            shutil.copytree(previous_run_output_dir, target_run_output_dir, dirs_exist_ok=True)
+        else:
+            shutil.copytree(previous_run_output_dir, target_run_output_dir)
+
+    OUTPUT_DIR = target_output_dir
+    RUN_OUTPUT_DIR = target_run_output_dir
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(RUN_OUTPUT_DIR, exist_ok=True)
+    _refresh_run_metadata()
+
+    if (
+        os.path.basename(previous_output_dir) == "landscape_result_pending"
+        and os.path.isdir(previous_output_dir)
+    ):
+        _cleanup_pending_output_dir(previous_output_dir, previous_run_output_dir)
+
+
+def _cleanup_pending_output_dir(previous_output_dir: str, previous_run_output_dir: str) -> None:
+    pending_latest_run = os.path.join(previous_output_dir, "latest_run.txt")
+    if os.path.isfile(pending_latest_run):
+        try:
+            os.remove(pending_latest_run)
+        except OSError:
+            pass
+
+    if os.path.isdir(previous_run_output_dir):
+        try:
+            shutil.rmtree(previous_run_output_dir)
+        except OSError:
+            pass
+
+    pending_runs_dir = os.path.join(previous_output_dir, "runs")
+    if os.path.isdir(pending_runs_dir):
+        try:
+            if not any(os.scandir(pending_runs_dir)):
+                os.rmdir(pending_runs_dir)
+        except OSError:
+            pass
+
+    try:
+        remaining_entries = list(os.scandir(previous_output_dir))
+    except FileNotFoundError:
+        remaining_entries = []
+    except OSError:
+        return
+
+    if not remaining_entries:
+        try:
+            os.rmdir(previous_output_dir)
+        except OSError:
+            pass
+
+
 def _next_artifact_index(name: str) -> int:
     artifact_counters[name] = artifact_counters.get(name, 0) + 1
     return artifact_counters[name]
@@ -113,15 +216,183 @@ def _write_csv_artifact(relative_path: str, df: pd.DataFrame) -> str:
 
 
 def _initialize_run_output() -> None:
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
     os.makedirs(RUN_OUTPUT_DIR, exist_ok=True)
-    _write_text_artifact("latest_run.txt", RUN_OUTPUT_DIR + "\n")
-    _write_json_artifact(
-        "run_metadata.json",
-        {
-            "run_output_dir": RUN_OUTPUT_DIR,
-            "landscape_result_dir": OUTPUT_DIR,
-        },
+    _refresh_run_metadata()
+
+
+def _get_default_fda_approval_route() -> Dict[str, Any]:
+    return {
+        "library_key": DEFAULT_FDA_LIBRARY_KEY,
+        "library_name": _DEFAULT_FDA_ENTRY["label"],
+        "approved_drugs": list(_DEFAULT_FDA_ENTRY["drugs"]),
+        "matched_terms": [],
+        "reason": "Default gastric cancer FDA approval library selected before routing.",
+        "used_fallback": True,
+    }
+
+
+def set_active_fda_approval_route(route: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    global ACTIVE_FDA_APPROVAL_ROUTE
+    global FDA_APPROVAL_DRUG_ACTIVE
+
+    selected_route = dict(route or _get_default_fda_approval_route())
+    selected_key = selected_route.get("library_key", DEFAULT_FDA_LIBRARY_KEY)
+    entry = get_library_entry(selected_key)
+    selected_route["library_name"] = selected_route.get("library_name") or entry["label"]
+    selected_route["approved_drugs"] = list(selected_route.get("approved_drugs") or entry["drugs"])
+
+    FDA_APPROVAL_DRUG_ACTIVE = list(selected_route["approved_drugs"])
+    ACTIVE_FDA_APPROVAL_ROUTE = selected_route
+    return dict(ACTIVE_FDA_APPROVAL_ROUTE)
+
+
+def get_active_fda_approval_route() -> Dict[str, Any]:
+    if ACTIVE_FDA_APPROVAL_ROUTE:
+        return dict(ACTIVE_FDA_APPROVAL_ROUTE)
+    return _get_default_fda_approval_route()
+
+
+def parse_membership_candidates(parsed_value: Any) -> List[str]:
+    if parsed_value is None:
+        return []
+
+    raw_value = str(parsed_value).strip()
+    if not raw_value:
+        return []
+
+    candidates: List[str] = []
+    try:
+        literal_value = ast.literal_eval(raw_value)
+        if isinstance(literal_value, list):
+            candidates = [str(item).strip().lower() for item in literal_value if str(item).strip()]
+        elif isinstance(literal_value, str) and literal_value.strip():
+            candidates = [literal_value.strip().lower()]
+    except Exception:
+        candidates = [item.strip().lower() for item in re.split(r"[,\n;]+", raw_value) if item.strip()]
+
+    return [candidate for candidate in candidates if candidate != "none"]
+
+
+def has_membership_match(candidates: List[str], membership_list: List[str]) -> bool:
+    normalized_candidates = [candidate.strip().lower() for candidate in candidates if candidate.strip()]
+    normalized_membership = [str(item).strip().lower() for item in membership_list if str(item).strip()]
+
+    for candidate in normalized_candidates:
+        for approved_item in normalized_membership:
+            if candidate == approved_item or candidate in approved_item or approved_item in candidate:
+                return True
+    return False
+
+
+def _build_active_fda_membership_prompt(route: Optional[Dict[str, Any]] = None) -> str:
+    selected_route = route or get_active_fda_approval_route()
+    drugs_text = ", ".join(selected_route.get("approved_drugs", [])) or "None"
+    return f"""
+The following predefined lists are available for membership checks in conditions:
+- FDA_APPROVAL_DRUG_ACTIVE: FDA-approved drugs routed for the current analysis.
+  Selected library: {selected_route.get("library_name", "Unknown")} (key: {selected_route.get("library_key", DEFAULT_FDA_LIBRARY_KEY)})
+  Approved drugs: {drugs_text}
+- FDA_APPROVAL_DRUG: the full disease-to-drug library dictionary for future extensions.
+
+For current-analysis FDA approval checks, always use membership_list_name = "FDA_APPROVAL_DRUG_ACTIVE".
+""".strip()
+
+
+def prepare_landscape_context_from_rules(
+    rules: List[str],
+    condition: str = "",
+    treatment: str = "",
+    routing_model: str = "gpt-4o-mini",
+) -> Dict[str, Any]:
+    base_retriever_input = infer_retriever_from_rules(rules)
+    retriever_input = dict(base_retriever_input)
+    if condition:
+        retriever_input["condition"] = condition
+    if treatment:
+        retriever_input["treatment"] = treatment
+
+    resolved_condition = retriever_input.get("condition", "")
+    resolved_treatment = retriever_input.get("treatment", "")
+
+    approved_drug_route = route_fda_approval_drug_library(
+        api_key=api_key_openai,
+        retriever_input=retriever_input,
+        model=routing_model,
     )
+    approved_drug_route = set_active_fda_approval_route(approved_drug_route)
+
+    context_payload = {
+        "retriever_input": retriever_input,
+        "condition": resolved_condition,
+        "treatment": resolved_treatment,
+        "fda_approval_route": approved_drug_route,
+    }
+    _write_json_artifact(
+        os.path.join("intermediate", "02a_route_fda_approval_drug_library.json"),
+        approved_drug_route,
+    )
+    _write_json_artifact(
+        os.path.join("intermediate", "02b_prepare_landscape_context_from_rules.json"),
+        context_payload,
+    )
+    return context_payload
+
+
+def _looks_like_name_extraction_instruction(instruction: str) -> bool:
+    lowered = (instruction or "").lower()
+    signals = [
+        "extract and return the names",
+        "return the names of interventions",
+        "return the names of drugs",
+        "return as a python list",
+        "comma-separated string",
+    ]
+    return any(signal in lowered for signal in signals)
+
+
+def _mentions_targeted_or_immunotherapy(text: str) -> bool:
+    lowered = (text or "").lower()
+    keywords = [
+        "targeted therap",
+        "immunotherap",
+        "checkpoint inhibitor",
+        "immune checkpoint",
+    ]
+    return any(keyword in lowered for keyword in keywords)
+
+
+def _normalize_condition_plan(cond_plan: Dict[str, Any], rule_description: str) -> Dict[str, Any]:
+    normalized = dict(cond_plan)
+    instruction = str(normalized.get("llm_instruction", "")).strip()
+    comparison = str(normalized.get("comparison", "")).strip()
+    target_value = str(normalized.get("target_value", "")).strip()
+    scope_text = " ".join([rule_description or "", instruction, target_value])
+
+    if (
+        comparison == "presence_match"
+        and _looks_like_name_extraction_instruction(instruction)
+        and _mentions_targeted_or_immunotherapy(scope_text)
+    ):
+        normalized["fields_to_attend"] = normalized.get("fields_to_attend") or ["Interventions"]
+        normalized["llm_instruction"] = (
+            "Identify whether the trial investigates at least one targeted therapy or immunotherapy "
+            "in the interventions under study. Return 'Yes' if at least one qualifying intervention "
+            "is present, otherwise return 'No'. Do not explain your answer."
+        )
+        normalized["comparison"] = "equal_to"
+        normalized["target_value"] = "Yes"
+
+    return normalized
+
+
+def normalize_filter_plan(plan: Dict[str, Any], rule_description: str) -> Dict[str, Any]:
+    normalized_plan = dict(plan)
+    normalized_plan["conditions"] = [
+        _normalize_condition_plan(cond_plan, rule_description)
+        for cond_plan in normalized_plan.get("conditions", [])
+    ]
+    return normalized_plan
 
 # Optional stubs:
 def llm_parser(*args, **kwargs):
@@ -204,34 +475,67 @@ def main():
     # 3) optional comment
     comment = _read_input("Optional: enter a comment (press Enter to skip): ", required=False)
 
-    print("\n[1/5] Generating selection rules via LLM ...")
+    print("\n[1/6] Generating selection rules via LLM ...")
     rules = generate_landscape_selection_rules(user_intent=user_intent, comment=comment or None)
 
-    print("[2/5] Building filter plans from rules ...")
-    plans_dict = build_landscape_plans_from_rules(rules)
-
-    # 4) & 5) condition / treatment with defaults from plans_dict
-    default_condition = plans_dict.get("condition", "")
-    default_treatment = plans_dict.get("treatment", "")
+    print("[2/6] Inferring retriever inputs and routing the FDA-approved drug library ...")
+    analysis_context = prepare_landscape_context_from_rules(
+        rules=rules,
+    )
+    default_condition = analysis_context.get("condition", "")
+    default_treatment = analysis_context.get("treatment", "")
+    route_info = analysis_context.get("fda_approval_route", {})
+    print(
+        f"Resolved FDA-approved drug library: {route_info.get('library_name', 'Unknown')} "
+        f"({len(route_info.get('approved_drugs', []))} drugs)"
+    )
     cond_in = _read_input(f"Condition (press Enter to use inferred default: '{default_condition}'): ", required=False)
     trt_in  = _read_input(f"Treatment (press Enter to use inferred default: '{default_treatment}'): ", required=False)
     condition = cond_in if cond_in else default_condition
     treatment = trt_in if trt_in else default_treatment
 
+    if condition != default_condition or treatment != default_treatment:
+        analysis_context = prepare_landscape_context_from_rules(
+            rules=rules,
+            condition=condition,
+            treatment=treatment,
+        )
+        route_info = analysis_context.get("fda_approval_route", {})
+        print(
+            f"Re-routed FDA-approved drug library: {route_info.get('library_name', 'Unknown')} "
+            f"({len(route_info.get('approved_drugs', []))} drugs)"
+        )
+
+    resolved_output_condition = (
+        condition
+        or analysis_context.get("condition", "")
+        or route_info.get("library_name", "")
+    )
+    _set_output_dir_for_condition(resolved_output_condition)
+    print(f"Output directory resolved to {OUTPUT_DIR}")
+
+    print("[3/6] Building filter plans from rules ...")
+    plans_dict = build_landscape_plans_from_rules(
+        rules=rules,
+        condition=condition,
+        treatment=treatment,
+        approved_drug_route=analysis_context.get("fda_approval_route"),
+    )
+
     print("\nInputs received. Starting automatic extraction and filtering ...")
 
-    print("[3/5] Fetching trials from ClinicalTrials.gov ...")
+    print("[4/6] Fetching trials from ClinicalTrials.gov ...")
     df = fetch_trials_by_condition_and_treatment(condition=condition, treatment=treatment)
 
     print(f"Fetched {len(df)} studies. Prefiltering ...")
     df_prefiltered = prefilter_study_df(df)
     print(f"Prefiltered to {len(df_prefiltered)} studies.")
 
-    print("[4/5] Generating row-level filters & applying them ...")
+    print("[5/6] Generating row-level filters & applying them ...")
     clear_registered_rules()
     sub_plans = plans_dict.get("function_plans", [])
     for i, plan in enumerate(sub_plans, start=1):
-        print(f"  • Rule {i}: {plan.get('filter_name','')}")
+        print(f"  â€¢ Rule {i}: {plan.get('filter_name','')}")
         code = generate_filter_function_from_plan(plan)
         _ = register_generated_python_function(plan, code)
 
@@ -262,10 +566,10 @@ def main():
     _write_json_artifact("rules.json", rules)
     _write_json_artifact("plans_dict.json", plans_dict)
 
-    print("\nExtraction and filtering complete. All artifacts saved under ./landscape_result.")
+    print(f"\nExtraction and filtering complete. All artifacts saved under {OUTPUT_DIR}.")
     print("Now starting automatic landscape analysis table generation ...")
 
-    print("[5/5] Fetching full study details for filtered NCT IDs ...")
+    print("[6/6] Fetching full study details for filtered NCT IDs ...")
     id_filtered = df_filtered.get("NCTId", pd.Series(dtype=str)).dropna().astype(str).tolist()
     df_table = fetch_trials_minimal_by_nct_ids(id_filtered)
     print(f"Fetched detailed info for {len(df_table)} studies. Building landscape table ...")
@@ -275,7 +579,8 @@ def main():
     landscape_table = generate_landscape_table(
         df_table,
         endpoint_list,
-        llm_parser
+        llm_parser,
+        landscape_condition_context=resolved_output_condition,
     )
 
     table_path = os.path.join(OUTPUT_DIR, "landscape_table.csv")
@@ -284,7 +589,7 @@ def main():
 
     print("\nAll done. The landscape analysis table has been written to:")
     print(f"  - {table_path}")
-    print("Intermediate CSVs and JSON are in ./landscape_result as well.")
+    print(f"Intermediate CSVs and JSON are in {OUTPUT_DIR} as well.")
     print(f"Mirrored outputs and intermediate planning artifacts are in {RUN_OUTPUT_DIR}")
 
 
@@ -331,9 +636,9 @@ def apply_registered_filters(df) -> pd.DataFrame:
 
 
 def list_registered_rules(verbose: bool = False):
-    print("📋 Registered Rules:")
+    print("ðŸ“‹ Registered Rules:")
     for rule_name in llm_rule_registry:
-        print(f"✅ {rule_name}")
+        print(f"âœ… {rule_name}")
         if verbose and rule_name in llm_rule_sources:
             print(llm_rule_sources[rule_name])
             print("-" * 80)
@@ -417,7 +722,11 @@ def register_generated_python_function(plan: dict, code_str: str) -> str:
     """
     global_env = {
         "llm_parser": llm_parser,
-        "FDA_approved_drugs_gastric": FDA_approved_drugs_gastric
+        "FDA_APPROVAL_DRUG": FDA_APPROVAL_DRUG,
+        "FDA_APPROVAL_DRUG_ACTIVE": FDA_APPROVAL_DRUG_ACTIVE,
+        "FDA_approved_drugs_gastric": FDA_approved_drugs_gastric,
+        "parse_membership_candidates": parse_membership_candidates,
+        "has_membership_match": has_membership_match,
     }
     local_env = {}
 
@@ -430,11 +739,11 @@ def register_generated_python_function(plan: dict, code_str: str) -> str:
             func = local_env[func_name]
             register_llm_rule(rule_name, func)
             llm_rule_sources[rule_name] = code_str
-            return f"✅ Registered rule '{rule_name}' successfully."
+            return f"âœ… Registered rule '{rule_name}' successfully."
         else:
-            return f"❌ Function '{func_name}' not found in generated code."
+            return f"âŒ Function '{func_name}' not found in generated code."
     except Exception as e:
-        return f"❌ Error during registration: {e}"
+        return f"âŒ Error during registration: {e}"
 
 def generate_landscape_selection_rules(
     user_intent: str,
@@ -477,7 +786,7 @@ Each rule should:
 - Be specific and clearly actionable (e.g., "Include only phase III trials")
 - Be based on standard clinical trial practice in the given disease
 - Include trial design features (e.g., control arms, endpoints, blinding) where relevant
-- Only generate rules that determine whether a clinical trial should be included in the meta-analysis — do not describe internal trial eligibility.
+- Only generate rules that determine whether a clinical trial should be included in the meta-analysis â€” do not describe internal trial eligibility.
 
 Do not include any of the following rules, as those are already taken care of in the pre-filtering step:
 - Check if the study has been completed
@@ -489,9 +798,9 @@ Important guidance:
   But be general, when including those two rules, just state the general treatment or disease, and do not mention stages unless the instruction is clear by the user.
 - Unless strictly specified by the user, be general about the inclusion of diseases. Prioritize on using "study", "deal with", or "involves", rather than "focus on" etc.
 
-✅ Output a JSON list of plain-English rules
-✅ Use phrases like “Include trials that…” or “Exclude trials that…”
-❌ Do not use markdown, explanation, or backticks
+âœ… Output a JSON list of plain-English rules
+âœ… Use phrases like â€œInclude trials thatâ€¦â€ or â€œExclude trials thatâ€¦â€
+âŒ Do not use markdown, explanation, or backticks
     """
 
 
@@ -569,11 +878,11 @@ def generate_filter_plan_from_rule(rule_description: str, temperature: float = 0
     """
     Generate a row-wise filtering plan from a natural-language inclusion/exclusion rule.
     Output is compatible with generate_filter_function_from_plan().
-    This version supports generating plans with multiple conditions and a logical operator ('and', 'or', 'sequential').
+    This version supports generating plans with multiple conditions and a logical operator ('default', 'sequential').
     Each condition has its own fields_to_attend, llm_instruction, comparison, and target_value.
     """
 
-    system_prompt = """
+    system_prompt = f"""
 You are a clinical trial filtering planner.
 
 You will be given a single inclusion/exclusion rule for selecting clinical trials (e.g., for landscape analysis).
@@ -611,9 +920,7 @@ You may choose from the following trial metadata fields:
 - Publications: List of publications related to the trial study. Could potentially be helpful as complimentary information to Summary, Conditions, and Eligibility.
 - Enrollment: Number of enrolled patients.
 
-The following predefined lists are available for membership checks in conditions:
-- FDA_approved_drugs_gastric: FDA-approved drugs for gastric cancer and gastroesophageal junction cancer.
-- (Add other lists as needed.)
+{_build_active_fda_membership_prompt(get_active_fda_approval_route())}
 
 For any condition using "comparison": "in_list", the llm_instruction must instruct the parser to extract and return only the drug or intervention names under investigation (not Yes/No), as a Python list (preferred, e.g., ["trastuzumab", "cisplatin"]) or as a single comma-separated string. Do NOT instruct the parser to answer whether any are FDA-approved, or to perform the membership check itself. The function writer will perform the membership check outside the LLM using the extracted names and the predefined list.
 
@@ -634,10 +941,11 @@ Use the following domain expertise as guidance:
       Sequential should always be used for exclusion, therefore, the 'llm_instruction' should inquire the desired result for subsequential condition. E.g., if the exclusion is great than a threshold, the instruction should ask if it is less than that.
       Example: Exclude phase 4 trials that have enrollment greater than 30. The first instruction is to evaluate whether or not it is phase 4, the second condition should evaluate whether it is *less than* 30.
       Example 2: Exclude phase 2 trials that have enrollments less than 5000. The first instruction is to evaluate whether or not it is phase 2, the second condition should evaluate whether it is *greater than* 5000.
-    - Default to 'and' if there is only one condition to be checked.
+    - Default to 'default' if there is only one condition to be checked.
 - Ensure the fields_to_attend and llm_instruction for each condition are minimal and relevant only to that specific condition's required extraction. This allows the function generator to call llm_parser specifically for the fields and information needed for each step, especially crucial for 'sequential'.
 - Unless absolutely necessary (usually it is sequential rules), *prioritize single condition checking over multiple conditions (i.e., length(conditions)=1)*.
 - Unless strictly specified by the rule, do not do literal matching, that is, *do not use quotation marks* for exact matching. Prioritize semantic matching.
+- If a rule asks whether the trial involves a therapy class such as targeted therapies or immunotherapies, use a binary Yes/No parser output and set comparison to "equal_to" with target_value "Yes". Do not ask the parser to list drug names for this kind of rule.
 - When evaluating whether a trial reports safety outcomes, prioritize the adverse events section and use primary and secondary outcomes as complementary context. Trials often track safety endpoints through safety populations and AE summaries, even if not labeled as formal outcome measures.
 - Unless you are absolutely certain or the rule is explicit (such as number of enrollment or phase), check more than one field for each condition as cross reference.
 
@@ -657,14 +965,14 @@ Rule:
     functions = [
     {
         "name": "generate_planning_metadata",
-        "description": "Generate a filtering plan for a landscape rule, supporting multiple conditions and logical operators ('and', 'or', 'sequential').",
+        "description": "Generate a filtering plan for a landscape rule, supporting 'default' or 'sequential' condition evaluation.",
         "parameters": {
             "type": "object",
             "properties": {
                 "filter_name": {"type": "string"},
                 "logical_operator": {
                     "type": "string",
-                    "enum": ["and", "or", "sequential"],
+                    "enum": ["default", "sequential"],
                     "description": "Logical operator to combine condition results."
                 },
                 "conditions": {
@@ -721,6 +1029,7 @@ Rule:
 
     arguments_str = response.choices[0].message.function_call.arguments
     plan = json.loads(arguments_str)
+    plan = normalize_filter_plan(plan, rule_description)
     idx = _next_artifact_index("generate_filter_plan_from_rule")
     filter_name = _sanitize_filename(plan.get("filter_name", f"filter_plan_{idx:02d}"))
     _write_json_artifact(
@@ -738,22 +1047,22 @@ Rule:
 
 def build_landscape_plans_from_rules(
     rules: list[str],
+    condition: str = "",
+    treatment: str = "",
+    approved_drug_route: Optional[dict] = None,
     model: str = "gpt-4o",
     temperature: float = 0.0
 ) -> dict:
     """
-    Given a list of rule descriptions, this function:
-    1. Infers the retriever inputs (e.g., condition, treatment).
-    2. Generates structured filter plans for each rule.
+    Given a list of rule descriptions, this function generates structured filter plans
+    for each rule using the currently active FDA-approved drug library.
 
     Returns a dict with keys:
     - "condition": str
     - "treatment": str
     - "function_rules": list[dict]
     """
-    # Step 1: Infer retriever input from the full rule set
-    retriever_input = infer_retriever_from_rules(rules)
-    # Step 2: Generate plans from each rule
+    active_route = set_active_fda_approval_route(approved_drug_route)
     function_plans = []
     for rule_description in rules:
         plan = generate_filter_plan_from_rule(
@@ -764,8 +1073,9 @@ def build_landscape_plans_from_rules(
         function_plans.append(plan)
 
     plans = {
-        "condition": retriever_input.get("condition", ""),
-        "treatment": retriever_input.get("treatment", ""),
+        "condition": condition,
+        "treatment": treatment,
+        "fda_approval_route": active_route,
         "function_plans": function_plans
     }
     _write_json_artifact(
@@ -812,9 +1122,13 @@ def generate_filter_function_from_plan(plan: dict) -> str:
             lines.append(f"\n    # Condition {i+1}: {instruction} ({comparison} {target_value})")
             lines.append(f"    fields_cond_{i} = {json.dumps(fields)}")
             lines.append(f"    input_text_cond_{i} = ' '.join([f\"{{f}}: {{row.get(f, '')}}\" for f in fields_cond_{i}])")
-            lines.append(f"    print(f'[LLM Input Condition {i+1}] → {{input_text_cond_{i}}}')")
+            lines.append(
+                f"    print('[LLM Input Condition {i+1}] -> ' + input_text_cond_{i}.encode('ascii', errors='replace').decode('ascii'))"
+            )
             lines.append(f"    parsed_cond_{i} = llm_parser(input_text_cond_{i}, {repr(instruction)}).strip()")
-            lines.append(f"    print(f'[Parsed Condition {i+1}] → {{parsed_cond_{i}}}')")
+            lines.append(
+                f"    print('[Parsed Condition {i+1}] -> ' + parsed_cond_{i}.encode('ascii', errors='replace').decode('ascii'))"
+            )
 
             # Comparison branches
             lines.append(f"    # Evaluate comparison {i+1}")
@@ -838,19 +1152,9 @@ def generate_filter_function_from_plan(plan: dict) -> str:
                 ]
             elif comparison == "in_list":
                 lines += [
-                    f"    # Membership check for ONLY the first extracted item (robust to list or delimited string)",
-                    f"    membership_list = set({membership_list_name})",
-                    f"    try:",
-                    f"        items = ast.literal_eval(parsed_cond_{i})",
-                    f"        if isinstance(items, list):",
-                    f"            first_item = str(items[0]).strip().lower() if items else ''",
-                    f"        else:",
-                    f"            raise ValueError",
-                    f"    except Exception:",
-                    f"        all_items = [item.strip().lower() for item in re.split(r'[,\\n;]+', parsed_cond_{i}) if item.strip().lower() != 'none']",
-                    f"        first_item = all_items[0] if all_items else ''",
-                    f"    fda_names = [m.lower() for m in membership_list]",
-                    f"    result_cond_{i} = any(first_item in fda or fda in first_item for fda in fda_names) if first_item else False",
+                    f"    membership_list = list({membership_list_name})",
+                    f"    extracted_items = parse_membership_candidates(parsed_cond_{i})",
+                    f"    result_cond_{i} = has_membership_match(extracted_items, membership_list)",
                 ]
             else:
                 lines.append(f"    result_cond_{i} = False  # unsupported comparison")
@@ -878,9 +1182,13 @@ def generate_filter_function_from_plan(plan: dict) -> str:
             lines.append(f"\n    # Condition {i+1}: {instruction} ({comparison} {target_value})")
             lines.append(f"    fields_cond_{i} = {json.dumps(fields)}")
             lines.append(f"    input_text_cond_{i} = ' '.join([f\"{{f}}: {{row.get(f, '')}}\" for f in fields_cond_{i}])")
-            lines.append(f"    print(f'[LLM Input Condition {i+1}] → {{input_text_cond_{i}}}')")
+            lines.append(
+                f"    print('[LLM Input Condition {i+1}] -> ' + input_text_cond_{i}.encode('ascii', errors='replace').decode('ascii'))"
+            )
             lines.append(f"    parsed_cond_{i} = llm_parser(input_text_cond_{i}, {repr(instruction)}).strip()")
-            lines.append(f"    print(f'[Parsed Condition {i+1}] → {{parsed_cond_{i}}}')")
+            lines.append(
+                f"    print('[Parsed Condition {i+1}] -> ' + parsed_cond_{i}.encode('ascii', errors='replace').decode('ascii'))"
+            )
 
             lines.append(f"    # Evaluate comparison {i+1}")
             if comparison == "presence_match":
@@ -906,19 +1214,9 @@ def generate_filter_function_from_plan(plan: dict) -> str:
                 ]
             elif comparison == "in_list":
                 lines += [
-                    f"    # Membership check for ONLY the first extracted item (robust to list or delimited string)",
-                    f"    membership_list = set({membership_list_name})",
-                    f"    try:",
-                    f"        items = ast.literal_eval(parsed_cond_{i})",
-                    f"        if isinstance(items, list):",
-                    f"            first_item = str(items[0]).strip().lower() if items else ''",
-                    f"        else:",
-                    f"            raise ValueError",
-                    f"    except Exception:",
-                    f"        all_items = [item.strip().lower() for item in re.split(r'[,\\n;]+', parsed_cond_{i}) if item.strip().lower() != 'none']",
-                    f"        first_item = all_items[0] if all_items else ''",
-                    f"    fda_names = [m.lower() for m in membership_list]",
-                    f"    result_cond_{i} = any(first_item in fda or fda in first_item for fda in fda_names) if first_item else False",
+                    f"    membership_list = list({membership_list_name})",
+                    f"    extracted_items = parse_membership_candidates(parsed_cond_{i})",
+                    f"    result_cond_{i} = has_membership_match(extracted_items, membership_list)",
                     f"    results.append(result_cond_{i})"
                 ]
             else:
@@ -1030,10 +1328,10 @@ Your job is to:
 - Identify any studies that are **subsets, extensions, or redundant variants** of more comprehensive trials in the list
 - Return a JSON list of NCT IDs that should be **excluded** to avoid double-counting or duplication
 
-⚠️ Only exclude studies if there's clear evidence that one is a sub-study or extension of another already in the list.
+âš ï¸ Only exclude studies if there's clear evidence that one is a sub-study or extension of another already in the list.
 
-✅ Respond with a JSON array of NCT IDs to exclude.
-❌ Do not include explanations, markdown, or commentary.
+âœ… Respond with a JSON array of NCT IDs to exclude.
+âŒ Do not include explanations, markdown, or commentary.
 """
 
     trials_text = json.dumps(trials_info, indent=2)
@@ -1145,7 +1443,7 @@ def fetch_trials_by_condition_and_treatment(condition: str, treatment: str) -> p
     return pd.DataFrame(all_studies)
 
 def _os_pfs_only(results_section: dict):
-    """Return a minimal list of outcome‑measure dicts limited to OS / PFS."""
+    """Return a minimal list of outcomeâ€‘measure dicts limited to OS / PFS."""
     out = []
     for om in results_section.get("outcomeMeasuresModule", {}).get("outcomeMeasures", []):
         title = (om.get("title") or "").lower()
@@ -1154,7 +1452,7 @@ def _os_pfs_only(results_section: dict):
                 "type"    : om.get("type"),
                 "title"   : om.get("title"),
                 "classes" : om.get("classes",   []),  # medians & CI per arm
-                "analyses": om.get("analyses",  []),  # HR, p‑value
+                "analyses": om.get("analyses",  []),  # HR, pâ€‘value
                 "denoms"  : om.get("denoms",    [])   # N per arm
             })
     return out
@@ -1170,7 +1468,7 @@ def _call_llm(prompt: str, instruction: str, llm_parser):
         return llm_parser(prompt, instruction)
     except Exception as e:
         if "context length" in str(e).lower():
-            print("\n=== LLM CTX‑LEN ERROR ===")
+            print("\n=== LLM CTXâ€‘LEN ERROR ===")
             print("INSTRUCTION (full):\n", instruction, sep="")
             print("\nPROMPT (full):\n", prompt, sep="")
             print("=========================\n")
@@ -1182,6 +1480,7 @@ def generate_landscape_table(
     df_filtered: pd.DataFrame,
     endpoint_list: list,
     llm_parser,
+    landscape_condition_context: str = "",
     biomarker_instruction=(
         "Extract all relevant molecular targets or biomarkers "
         "(e.g., HER2, PD-1, MSI-H, Claudin 18.2) mentioned in this trial. "
@@ -1202,6 +1501,7 @@ def generate_landscape_table(
 ):
     """Return a DataFrame summarising trials, including key endpoints and a narrative summary."""
 
+    landscape_focus = landscape_condition_context.strip() or "target disease"
     records = []
 
     for _, row in df_filtered.iterrows():
@@ -1260,8 +1560,8 @@ def generate_landscape_table(
             f"ENROLLMENT: {enrollment}\n"
             f"INTERVENTIONS: {intervention}\n"
             f"SUMMARY TEXT: {summary}\n\n"
-            "Provide a 2‑3 sentence summary of the trial and briefly explain why it is relevant or interesting "
-            "for the gastric‑cancer landscape analysis (e.g., novel target, large sample, first‑in‑class, etc.)."
+            "Provide a 2â€‘3 sentence summary of the trial and briefly explain why it is relevant or interesting "
+            f"for the {landscape_focus} landscape analysis (e.g., novel target, large sample, firstâ€‘inâ€‘class, etc.)."
             "If the trial status is terminated, flag that in the summary as well, and mention why it still might be of interest even if terminated."
         )
         trial_narrative = _call_llm(summary_prompt, "Write trial summary", llm_parser)
@@ -1287,3 +1587,4 @@ def generate_landscape_table(
 
 if __name__ == '__main__':
     main()
+

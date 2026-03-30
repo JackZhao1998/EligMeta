@@ -1,0 +1,18 @@
+{
+  "rule_description": "Include trials that enroll biomarker-stratified populations, including but not limited to HER2-positive, MSI-H, or PD-L1 positive.",
+  "plan": {
+    "filter_name": "biomarker_stratified_population_inclusion",
+    "logical_operator": "default",
+    "conditions": [
+      {
+        "fields_to_attend": [
+          "Eligibility",
+          "Summary"
+        ],
+        "llm_instruction": "Identify if the trial enrolls biomarker-stratified populations such as HER2-positive, MSI-H, or PD-L1 positive. Return 'Yes' if any of these biomarkers are mentioned, otherwise return 'No'. Do not explain your answer.",
+        "comparison": "equal_to",
+        "target_value": "Yes"
+      }
+    ]
+  }
+}

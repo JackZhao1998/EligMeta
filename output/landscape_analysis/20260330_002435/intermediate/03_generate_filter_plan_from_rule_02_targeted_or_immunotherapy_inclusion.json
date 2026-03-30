@@ -1,0 +1,19 @@
+{
+  "rule_description": "Include trials that investigate targeted therapies or immunotherapies.",
+  "plan": {
+    "filter_name": "targeted_or_immunotherapy_inclusion",
+    "logical_operator": "default",
+    "conditions": [
+      {
+        "fields_to_attend": [
+          "Interventions",
+          "Summary",
+          "Eligibility"
+        ],
+        "llm_instruction": "Determine if the trial investigates targeted therapies or immunotherapies. Return 'Yes' if it does, otherwise return 'No'. Do not explain your answer.",
+        "comparison": "equal_to",
+        "target_value": "Yes"
+      }
+    ]
+  }
+}

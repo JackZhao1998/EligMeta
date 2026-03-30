@@ -1,0 +1,17 @@
+{
+  "rule_description": "Include trials that investigate targeted therapies or immunotherapies.",
+  "plan": {
+    "filter_name": "targeted_or_immunotherapy_inclusion",
+    "logical_operator": "default",
+    "conditions": [
+      {
+        "fields_to_attend": [
+          "Interventions"
+        ],
+        "llm_instruction": "Extract and return the names of interventions that are classified as targeted therapies or immunotherapies. Return as a Python list or a single comma-separated string.",
+        "comparison": "presence_match",
+        "target_value": "targeted therapy or immunotherapy"
+      }
+    ]
+  }
+}

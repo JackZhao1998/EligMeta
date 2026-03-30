@@ -1,0 +1,97 @@
+{
+  "retriever_input": {
+    "condition": "pancreatic cancer",
+    "treatment": "targeted therapies or immunotherapies"
+  },
+  "condition": "pancreatic cancer",
+  "treatment": "targeted therapies or immunotherapies",
+  "fda_approval_route": {
+    "library_key": "pancreatic_cancer",
+    "library_name": "Pancreatic Cancer",
+    "matched_terms": [
+      "Pancreatic Cancer"
+    ],
+    "reason": "Matched the existing FDA library using alias 'Pancreatic Cancer'.",
+    "approved_drugs": [
+      "gemcitabine",
+      "Gemzar",
+      "Infugem",
+      "Avgemsi",
+      "fluorouracil",
+      "Favlyxa",
+      "capecitabine",
+      "Xeloda",
+      "Abraxane",
+      "paclitaxel protein-bound",
+      "Lynparza",
+      "olaparib",
+      "Afinitor",
+      "everolimus",
+      "Sutent",
+      "sunitinib",
+      "irinotecan liposomal",
+      "Onivyde",
+      "erlotinib",
+      "Zanosar",
+      "streptozocin",
+      "Mutamycin",
+      "mitomycin",
+      "Bizengri",
+      "zenocutuzumab"
+    ],
+    "used_fallback": false,
+    "library_created": false,
+    "source": {
+      "site": "Drugs.com",
+      "source_url": "https://www.drugs.com/condition/pancreatic-cancer.html?page_all=1",
+      "retrieved_at": "2026-03-30T04:48:00.035806+00:00",
+      "search_url": "https://www.drugs.com/search.php?searchterm=Pancreatic+Cancer&sources%5B%5D=",
+      "agent_trace": [
+        {
+          "step": 1,
+          "url": "https://www.drugs.com/search.php",
+          "title": "Drugs.com",
+          "observation": "title=Drugs.com; url=https://www.drugs.com/search.php; search_box=yes",
+          "action": {
+            "type": "search",
+            "query": "Pancreatic Cancer",
+            "reason": "Search the Drugs.com catalog using the condition query."
+          }
+        },
+        {
+          "step": 2,
+          "url": "https://www.drugs.com/search.php?searchterm=Pancreatic+Cancer&sources%5B%5D=",
+          "title": "Pancreatic cancer - Search results. Page 1 of about 154533 results",
+          "observation": "title=Pancreatic cancer - Search results. Page 1 of about 154533 results; url=https://www.drugs.com/search.php?searchterm=Pancreatic+Cancer&sources%5B%5D=; search_box=yes; heading=Opt out of the sale or sharing of personal information; query=Pancreatic Cancer",
+          "action": {
+            "type": "open_condition_result",
+            "target_url": "https://www.drugs.com/condition/pancreatic-cancer.html",
+            "label": "Pancreatic Cancer Medications Treatment Options (Drugs.com) Pancreatic carcinoma is a malignancy (cancer) of the pancreas.",
+            "reason": "Open the best matching condition medication page from search results."
+          }
+        },
+        {
+          "step": 3,
+          "url": "https://www.drugs.com/condition/pancreatic-cancer.html",
+          "title": "List of 29 Pancreatic Cancer Medications Compared",
+          "observation": "title=List of 29 Pancreatic Cancer Medications Compared; url=https://www.drugs.com/condition/pancreatic-cancer.html; search_box=yes; heading=Medications for Pancreatic Cancer; rows=25; view_all=yes",
+          "action": {
+            "type": "view_all_results",
+            "target_url": "https://www.drugs.com/condition/pancreatic-cancer.html?page_all=1",
+            "reason": "Open the one-page medication table before parsing."
+          }
+        },
+        {
+          "step": 4,
+          "url": "https://www.drugs.com/condition/pancreatic-cancer.html?page_all=1",
+          "title": "List of 29 Pancreatic Cancer Medications Compared",
+          "observation": "title=List of 29 Pancreatic Cancer Medications Compared; url=https://www.drugs.com/condition/pancreatic-cancer.html?page_all=1; search_box=yes; heading=Medications for Pancreatic Cancer; rows=29",
+          "action": {
+            "type": "parse_medications",
+            "reason": "The medication table is visible and ready to parse."
+          }
+        }
+      ]
+    }
+  }
+}

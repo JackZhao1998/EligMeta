@@ -1,0 +1,72 @@
+{
+  "retriever_input": {
+    "condition": "Trials should report survival outcomes such as progression-free survival (PFS) or overall survival (OS),and enrolled biomarker-stratified populations (including but not limited to HER2-positive, MSI-H, PD-L1 positive).",
+    "treatment": "Exclude phase 3 trials with insiginificant number of enrollment patients (say less than 100)."
+  },
+  "condition": "Trials should report survival outcomes such as progression-free survival (PFS) or overall survival (OS),and enrolled biomarker-stratified populations (including but not limited to HER2-positive, MSI-H, PD-L1 positive).",
+  "treatment": "Exclude phase 3 trials with insiginificant number of enrollment patients (say less than 100).",
+  "fda_approval_route": {
+    "library_key": "gastric_cancer",
+    "library_name": "Gastric cancer / gastroesophageal junction cancer",
+    "matched_terms": [
+      "gastric cancer",
+      "gastroesophageal junction cancer",
+      "HER2-positive"
+    ],
+    "reason": "The context specifically mentions HER2-positive populations, which aligns with gastric cancer treatments.",
+    "approved_drugs": [
+      "Avapritinib",
+      "Ayvakit",
+      "Gleevec",
+      "Imatinib Mesylate",
+      "Imkeldi",
+      "Qinlock",
+      "Regorafenib",
+      "Ripretinib",
+      "Stivarga",
+      "Sunitinib Malate",
+      "Sutent",
+      "Capecitabine",
+      "Cyramza",
+      "Docetaxel",
+      "Doxorubicin Hydrochloride",
+      "Enhertu",
+      "DS-8201a",
+      "5-FU",
+      "Fam-Trastuzumab Deruxtecan-nxki",
+      "Fluorouracil Injection",
+      "Herceptin",
+      "Keytruda",
+      "Lonsurf",
+      "Mitomycin",
+      "Nivolumab",
+      "Nivolumab and Hyaluronidase-nvhy",
+      "Opdivo",
+      "Opdivo Qvantig",
+      "Pembrolizumab",
+      "Ramucirumab",
+      "Taxotere",
+      "Tevimbra",
+      "Tislelizumab-jsgr",
+      "Trastuzumab",
+      "Trifluridine and Tipiracil Hydrochloride",
+      "Vyloy",
+      "Xeloda",
+      "Zolbetuximab-clzb",
+      "FU-LV",
+      "TPF",
+      "XELIRI",
+      "Afinitor",
+      "Afinitor Disperz",
+      "Everolimus",
+      "Lanreotide Acetate",
+      "Somatuline Depot"
+    ],
+    "used_fallback": true,
+    "library_created": false,
+    "source": {
+      "site": "seed",
+      "description": "Bundled default library"
+    }
+  }
+}
