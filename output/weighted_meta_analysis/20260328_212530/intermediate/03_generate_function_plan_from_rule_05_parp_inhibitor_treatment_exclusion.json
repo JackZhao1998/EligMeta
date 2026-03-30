@@ -1,0 +1,11 @@
+{
+  "rule_description": "The target trial excludes any previous treatment with a PARP inhibitor, while prior trials also exclude previous treatment with PARP inhibitors, but the focus on different cancer types and stages may lead to different patient populations. Severity: 0.6",
+  "plan": {
+    "penalty_function_name": "parp_inhibitor_treatment_exclusion",
+    "entity_to_attend_to": "Previous Treatment",
+    "severity_score": 0.6,
+    "llm_instruction": "Check if the patient has received previous treatment with PARP inhibitors. Return 'Yes' or 'No' only. Do not explain your answer.",
+    "comparison": "presence_match",
+    "target_parsed_value": "No"
+  }
+}

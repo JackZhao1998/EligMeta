@@ -1,0 +1,14 @@
+{
+  "rule_description": "The target trial requires patients to have a documented gBRCA1 or gBRCA2 mutation and be on a first-line platinum-based regimen for metastatic pancreas cancer, whereas prior trials focus on ovarian cancer and require completion of first-line or multiple lines of platinum-based therapy, indicating a mismatch in cancer type and treatment stage. Severity: 1.0",
+  "plan": {
+    "penalty_function_name": "cancer_type_and_treatment_stage_mismatch",
+    "entity_to_attend_to": [
+      "Diagnosis",
+      "Previous Treatment"
+    ],
+    "severity_score": 1.0,
+    "llm_instruction": "Extract the type of cancer and the treatment stage from the trial data. Return the cancer type and treatment stage as a string, separated by a comma. Do not include explanations.",
+    "comparison": "not_equal",
+    "target_parsed_value": "metastatic pancreas cancer, first-line platinum-based regimen"
+  }
+}

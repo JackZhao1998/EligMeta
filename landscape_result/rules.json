@@ -1,0 +1,8 @@
+[
+  "Include trials that study gastric cancer or gastroesophageal junction cancer.",
+  "Include trials that investigate targeted therapies or immunotherapies.",
+  "Include trials that report survival outcomes such as progression-free survival (PFS) or overall survival (OS).",
+  "Include trials that enroll biomarker-stratified populations, including but not limited to HER2-positive, MSI-H, or PD-L1 positive.",
+  "Exclude phase III trials with fewer than 100 enrolled patients.",
+  "Include trials where the drugs under investigation are FDA-approved."
+]

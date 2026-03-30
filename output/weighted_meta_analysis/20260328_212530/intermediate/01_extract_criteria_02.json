@@ -1,0 +1,142 @@
+{
+  "disease": "cancer",
+  "eligibility_text": "Inclusion Criteria:\n\n* Female patients with newly diagnosed, histologically confirmed, high risk advanced (FIGO stage III - IV) BRCA mutated high grade serous or high grade endometrioid ovarian cancer, primary peritoneal cancer and / or fallopian - tube cancer who have completed first line platinum based chemotherapy (intravenous or intraperitoneal).\n* Stage III patients must have had one attempt at optimal debulking surgery (upfront or interval debulking). Stage IV patients must have had either a biopsy and/or upfront or interval debulking surgery.\n* Documented mutation in BRCA1 or BRCA2 that is predicted to be deleterious or suspected deleterious (known or predicted to be detrimental/lead to loss of function).\n* Patients who have completed first line platinum (e.g. carboplatin or cisplatin), containing therapy (intravenous or intraperitoneal) prior to randomisation:\n* Patients must have, in the opinion of the investigator, clinical complete response or partial response and have no clinical evidence of disease progression on the post treatment scan or rising CA-125 level, following completion of this chemotherapy course. Patients with stable disease on the post-treatment scan at completion of first line platinum-containing therapy are not eligible for the study.\n* Patients must be randomized within 8 weeks of their last dose of chemotherapy\n\nExclusion Criteria:\n\n* BRCA1 and/or BRCA2 mutations that are considered to be non detrimental (e.g. \"Variants of uncertain clinical significance\" or \"Variant of unknown significance\" or \"Variant, favor polymorphism\" or \"benign polymorphism\" etc).\n* Patients with early stage disease (FIGO Stage I, IIA, IIB or IIC)\n* Stable disease or progressive disease on the post-treatment scan or clinical evidence of progression at the end of the patient's first line chemotherapy treatment.\n* Patients where more than one debulking surgery has been performed before randomisation to the study. (Patients who, at the time of diagnosis, are deemed to be unresectable and undergo only a biopsy or oophorectomy but then go on to receive chemotherapy and interval debulking surgery are eligible).\n* Patients who have previously been diagnosed and treated for earlier stage ovarian, fallopian tube or primary peritoneal cancer.\n* Patients who have previously received chemotherapy for any abdominal or pelvic tumour, including treatment for prior diagnosis at an earlier stage for their ovarian, fallopian tube or primary peritoneal cancer. (Patients who have received prior adjuvant chemotherapy for localised breast cancer may be eligible, provided that it was completed more than three years prior to registration, and that the patient remains free of recurrent or metastatic disease).\n* Patients with synchronous primary endometrial cancer unless both of the following criteria are met: 1) stage \\<2 2) less than 60 years old at the time of diagnosis of endometrial cancer with stage IA or IB grade 1 or 2, or stage IA grade 3 endometrioid adenocarcinoma OR ≥ 60 years old at the time of diagnosis of endometrial cancer with Stage IA grade 1 or 2 endometrioid adenocarcinoma. Patients with serous or clear cell adenocarcinoma or carcinosarcoma of the endometrium are not eligible.",
+  "criteria": [
+    {
+      "Type": "Inclusion",
+      "Entity": "Demographic",
+      "Attribute": "Gender",
+      "Value": "Female",
+      "Condition": "newly diagnosed, histologically confirmed, high risk advanced (FIGO stage III - IV) BRCA mutated high grade serous or high grade endometrioid ovarian cancer, primary peritoneal cancer and / or fallopian - tube cancer",
+      "Sentence": "Female patients with newly diagnosed, histologically confirmed, high risk advanced (FIGO stage III - IV) BRCA mutated high grade serous or high grade endometrioid ovarian cancer, primary peritoneal cancer and / or fallopian - tube cancer who have completed first line platinum based chemotherapy (intravenous or intraperitoneal)."
+    },
+    {
+      "Type": "Inclusion",
+      "Entity": "Diagnosis",
+      "Attribute": "Stage",
+      "Value": "III",
+      "Condition": "must have had one attempt at optimal debulking surgery (upfront or interval debulking)",
+      "Sentence": "Stage III patients must have had one attempt at optimal debulking surgery (upfront or interval debulking)."
+    },
+    {
+      "Type": "Inclusion",
+      "Entity": "Diagnosis",
+      "Attribute": "Stage",
+      "Value": "IV",
+      "Condition": "must have had either a biopsy and/or upfront or interval debulking surgery",
+      "Sentence": "Stage IV patients must have had either a biopsy and/or upfront or interval debulking surgery."
+    },
+    {
+      "Type": "Inclusion",
+      "Entity": "Biomarker",
+      "Attribute": "Mutation",
+      "Value": "BRCA1 or BRCA2",
+      "Condition": "predicted to be deleterious or suspected deleterious",
+      "Sentence": "Documented mutation in BRCA1 or BRCA2 that is predicted to be deleterious or suspected deleterious (known or predicted to be detrimental/lead to loss of function)."
+    },
+    {
+      "Type": "Inclusion",
+      "Entity": "Previous Treatment",
+      "Attribute": "Chemotherapy",
+      "Value": "Yes",
+      "Condition": "completed first line platinum (e.g. carboplatin or cisplatin), containing therapy (intravenous or intraperitoneal) prior to randomisation",
+      "Sentence": "Patients who have completed first line platinum (e.g. carboplatin or cisplatin), containing therapy (intravenous or intraperitoneal) prior to randomisation:"
+    },
+    {
+      "Type": "Inclusion",
+      "Entity": "Diagnosis",
+      "Attribute": "Response",
+      "Value": "clinical complete response or partial response",
+      "Condition": "no clinical evidence of disease progression on the post treatment scan or rising CA-125 level",
+      "Sentence": "Patients must have, in the opinion of the investigator, clinical complete response or partial response and have no clinical evidence of disease progression on the post treatment scan or rising CA-125 level, following completion of this chemotherapy course."
+    },
+    {
+      "Type": "Inclusion",
+      "Entity": "Diagnosis",
+      "Attribute": "Stable disease",
+      "Value": "Not eligible",
+      "Condition": "on the post-treatment scan at completion of first line platinum-containing therapy",
+      "Sentence": "Patients with stable disease on the post-treatment scan at completion of first line platinum-containing therapy are not eligible for the study."
+    },
+    {
+      "Type": "Inclusion",
+      "Entity": "Previous Treatment",
+      "Attribute": "Randomization",
+      "Value": "within 8 weeks",
+      "Condition": "of their last dose of chemotherapy",
+      "Sentence": "Patients must be randomized within 8 weeks of their last dose of chemotherapy"
+    },
+    {
+      "Type": "Exclusion",
+      "Entity": "Biomarker",
+      "Attribute": "Mutation",
+      "Value": "BRCA1 and/or BRCA2",
+      "Condition": "considered to be non detrimental",
+      "Sentence": "BRCA1 and/or BRCA2 mutations that are considered to be non detrimental (e.g. \"Variants of uncertain clinical significance\" or \"Variant of unknown significance\" or \"Variant, favor polymorphism\" or \"benign polymorphism\" etc)."
+    },
+    {
+      "Type": "Exclusion",
+      "Entity": "Diagnosis",
+      "Attribute": "Stage",
+      "Value": "I, IIA, IIB or IIC",
+      "Condition": "early stage disease",
+      "Sentence": "Patients with early stage disease (FIGO Stage I, IIA, IIB or IIC)"
+    },
+    {
+      "Type": "Exclusion",
+      "Entity": "Diagnosis",
+      "Attribute": "Stable disease or progressive disease",
+      "Value": "Yes",
+      "Condition": "on the post-treatment scan or clinical evidence of progression at the end of the patient's first line chemotherapy treatment",
+      "Sentence": "Stable disease or progressive disease on the post-treatment scan or clinical evidence of progression at the end of the patient's first line chemotherapy treatment."
+    },
+    {
+      "Type": "Exclusion",
+      "Entity": "Previous Treatment",
+      "Attribute": "Debulking surgery",
+      "Value": "More than one",
+      "Condition": "performed before randomisation to the study",
+      "Sentence": "Patients where more than one debulking surgery has been performed before randomisation to the study."
+    },
+    {
+      "Type": "Exclusion",
+      "Entity": "Previous Treatment",
+      "Attribute": "Diagnosis and treatment",
+      "Value": "Yes",
+      "Condition": "previously diagnosed and treated for earlier stage ovarian, fallopian tube or primary peritoneal cancer",
+      "Sentence": "Patients who have previously been diagnosed and treated for earlier stage ovarian, fallopian tube or primary peritoneal cancer."
+    },
+    {
+      "Type": "Exclusion",
+      "Entity": "Previous Treatment",
+      "Attribute": "Chemotherapy",
+      "Value": "Yes",
+      "Condition": "previously received chemotherapy for any abdominal or pelvic tumour",
+      "Sentence": "Patients who have previously received chemotherapy for any abdominal or pelvic tumour, including treatment for prior diagnosis at an earlier stage for their ovarian, fallopian tube or primary peritoneal cancer."
+    },
+    {
+      "Type": "Exclusion",
+      "Entity": "Previous Treatment",
+      "Attribute": "Adjuvant chemotherapy",
+      "Value": "Allowed",
+      "Condition": "received prior adjuvant chemotherapy for localised breast cancer completed more than three years prior to registration, and patient remains free of recurrent or metastatic disease",
+      "Sentence": "Patients who have received prior adjuvant chemotherapy for localised breast cancer may be eligible, provided that it was completed more than three years prior to registration, and that the patient remains free of recurrent or metastatic disease."
+    },
+    {
+      "Type": "Exclusion",
+      "Entity": "Diagnosis",
+      "Attribute": "Synchronous primary endometrial cancer",
+      "Value": "Yes",
+      "Condition": "unless both of the following criteria are met: 1) stage <2 2) less than 60 years old at the time of diagnosis of endometrial cancer with stage IA or IB grade 1 or 2, or stage IA grade 3 endometrioid adenocarcinoma OR ≥ 60 years old at the time of diagnosis of endometrial cancer with Stage IA grade 1 or 2 endometrioid adenocarcinoma",
+      "Sentence": "Patients with synchronous primary endometrial cancer unless both of the following criteria are met: 1) stage <2 2) less than 60 years old at the time of diagnosis of endometrial cancer with stage IA or IB grade 1 or 2, or stage IA grade 3 endometrioid adenocarcinoma OR ≥ 60 years old at the time of diagnosis of endometrial cancer with Stage IA grade 1 or 2 endometrioid adenocarcinoma."
+    },
+    {
+      "Type": "Exclusion",
+      "Entity": "Diagnosis",
+      "Attribute": "Serous or clear cell adenocarcinoma or carcinosarcoma",
+      "Value": "Not eligible",
+      "Condition": "of the endometrium",
+      "Sentence": "Patients with serous or clear cell adenocarcinoma or carcinosarcoma of the endometrium are not eligible."
+    }
+  ]
+}

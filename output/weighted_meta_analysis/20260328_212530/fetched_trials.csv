@@ -1,0 +1,73 @@
+NCTId,Title,Status,Conditions,Interventions,Study Type,Allocation,Phase,Eligibility
+NCT02184195,Olaparib in gBRCA Mutated Pancreatic Cancer Whose Disease Has Not Progressed on First Line Platinum-Based Chemotherapy,COMPLETED,"['Germline BRCA1/2 Mutations and', 'Metastatic Adenocarcinoma of the Pancreas']","[{'type': 'DRUG', 'name': 'Olaparib', 'description': 'Tablet -100mg', 'armGroupLabels': ['Olaparib']}, {'type': 'DRUG', 'name': 'Olaparib', 'description': 'Tablet-150mg', 'armGroupLabels': ['Olaparib']}, {'type': 'DRUG', 'name': 'Placebo', 'description': 'Match Olaparib 100mg placebo', 'armGroupLabels': ['Placebo']}, {'type': 'DRUG', 'name': 'Placebo', 'description': 'Match Olaparib 150mg placebo', 'armGroupLabels': ['Placebo']}]",INTERVENTIONAL,RANDOMIZED,['PHASE3'],"Key Inclusion Criteria
+
+* Histologically or cytologically confirmed pancreas adenocarcinoma receiving initial chemotherapy for metastatic disease and without evidence of disease progression on treatment
+* Patients with measurable disease and/or non-measurable or no evidence of disease assessed at baseline by CT (or MRI where CT is contraindicated) will be entered in this study.
+* Documented mutation in gBRCA1 or gBRCA2 that is predicted to be deleterious or suspected deleterious
+* Patients are on treatment with a first line platinum-based (cisplatin, carboplatin or oxaliplatin) regimen for metastatic pancreas cancer, have received a minimum of 16 weeks of continuous platinum treatment and have no evidence of progression based on investigator's opinion.
+* Patients who have received platinum as potentially curative treatment for a prior cancer (eg ovarian cancer) or as adjuvant/neoadjuvant treatment for pancreas cancer are eligible provided at least 12 months have elapsed between the last dose of platinum-based treatment and initiation of the platinum-based chemotherapy for metastatic pancreas cancer.
+
+Major Exclusion Criteria:
+
+* gBRCA1 and/or gBRCA2 mutations that are considered to be non detrimental (eg, ""Variants of uncertain clinical significance"" or ""Variant of unknown significance"" or ""Variant, favour polymorphism"" or ""benign polymorphism"" etc.)
+* Progression of tumour between start of first line platinum based chemotherapy for metastatic pancreas cancer and randomisation.
+* Cytotoxic chemotherapy or non-hormonal targeted therapy within 28 days of Cycle
+
+  1 Day 1 is not permitted.
+* Exposure to an investigational product within 30 days or 5 half lives (whichever is longer) prior to randomisation
+* Any previous treatment with a PARP inhibitor, including Olaparib"
+NCT01844986,Olaparib Maintenance Monotherapy in Patients With BRCA Mutated Ovarian Cancer Following First Line Platinum Based Chemotherapy.,ACTIVE_NOT_RECRUITING,"['Newly Diagnosed', 'Advanced Ovarian Cancer', 'FIGO Stage III-IV', 'BRCA Mutation', 'Complete Response', 'Partial Response', 'First Line Platinum Chemotherapy']","[{'type': 'DRUG', 'name': 'Olaparib 300mg tablets', 'description': ""Olaparib/placebo tablets p.o 300mg twice daily for up to 2 years or until objective radiological disease progression as per RECIST as assessed by the Investigator. Patients with evidence of stable disease (or those who have progressed), may continue on treatment beyond 2 years, if in the patient's best interest. Dose reduction to 250mg and subsequently 200mg is permitted following confirmation of toxicity."", 'armGroupLabels': ['Olaparib tablets p.o. 300mg twice daily', 'Placebo tablets p.o. twice daily']}]",INTERVENTIONAL,RANDOMIZED,['PHASE3'],"Inclusion Criteria:
+
+* Female patients with newly diagnosed, histologically confirmed, high risk advanced (FIGO stage III - IV) BRCA mutated high grade serous or high grade endometrioid ovarian cancer, primary peritoneal cancer and / or fallopian - tube cancer who have completed first line platinum based chemotherapy (intravenous or intraperitoneal).
+* Stage III patients must have had one attempt at optimal debulking surgery (upfront or interval debulking). Stage IV patients must have had either a biopsy and/or upfront or interval debulking surgery.
+* Documented mutation in BRCA1 or BRCA2 that is predicted to be deleterious or suspected deleterious (known or predicted to be detrimental/lead to loss of function).
+* Patients who have completed first line platinum (e.g. carboplatin or cisplatin), containing therapy (intravenous or intraperitoneal) prior to randomisation:
+* Patients must have, in the opinion of the investigator, clinical complete response or partial response and have no clinical evidence of disease progression on the post treatment scan or rising CA-125 level, following completion of this chemotherapy course. Patients with stable disease on the post-treatment scan at completion of first line platinum-containing therapy are not eligible for the study.
+* Patients must be randomized within 8 weeks of their last dose of chemotherapy
+
+Exclusion Criteria:
+
+* BRCA1 and/or BRCA2 mutations that are considered to be non detrimental (e.g. ""Variants of uncertain clinical significance"" or ""Variant of unknown significance"" or ""Variant, favor polymorphism"" or ""benign polymorphism"" etc).
+* Patients with early stage disease (FIGO Stage I, IIA, IIB or IIC)
+* Stable disease or progressive disease on the post-treatment scan or clinical evidence of progression at the end of the patient's first line chemotherapy treatment.
+* Patients where more than one debulking surgery has been performed before randomisation to the study. (Patients who, at the time of diagnosis, are deemed to be unresectable and undergo only a biopsy or oophorectomy but then go on to receive chemotherapy and interval debulking surgery are eligible).
+* Patients who have previously been diagnosed and treated for earlier stage ovarian, fallopian tube or primary peritoneal cancer.
+* Patients who have previously received chemotherapy for any abdominal or pelvic tumour, including treatment for prior diagnosis at an earlier stage for their ovarian, fallopian tube or primary peritoneal cancer. (Patients who have received prior adjuvant chemotherapy for localised breast cancer may be eligible, provided that it was completed more than three years prior to registration, and that the patient remains free of recurrent or metastatic disease).
+* Patients with synchronous primary endometrial cancer unless both of the following criteria are met: 1) stage \<2 2) less than 60 years old at the time of diagnosis of endometrial cancer with stage IA or IB grade 1 or 2, or stage IA grade 3 endometrioid adenocarcinoma OR ≥ 60 years old at the time of diagnosis of endometrial cancer with Stage IA grade 1 or 2 endometrioid adenocarcinoma. Patients with serous or clear cell adenocarcinoma or carcinosarcoma of the endometrium are not eligible."
+NCT00753545,Assessment of Efficacy of AZD2281 in Platinum Sensitive Relapsed Serous Ovarian Cancer,COMPLETED,['Ovarian Cancer'],"[{'type': 'DRUG', 'name': 'AZD2281', 'description': 'Tablets Oral BID', 'armGroupLabels': ['1'], 'otherNames': ['Olaparib, Lynparza']}, {'type': 'DRUG', 'name': 'matching placebo', 'description': 'matching placebo bid', 'armGroupLabels': ['2']}]",INTERVENTIONAL,RANDOMIZED,['PHASE2'],"Inclusion Criteria:
+
+* Female patients with histologically diagnosed serous ovarian cancer or recurrent serous ovarian cancer.
+* Patients must have completed at least 2 previous courses of platinum containing therapy; the patient must have been platinum sensitive to the penultimate chemo regimen.
+* For the last chemotherapy course prior to enrolment on the study, patients must have demonstrated an objective stable maintained response (partial or complete response) and this response needs to be maintained until completion of chemotherapy.
+* Patients must be treated on the study within 8 wks of completion of their final dose of the platinum containing regimen.
+
+Exclusion Criteria:
+
+* Previous treatment with PARP inhibitors including AZD2281
+* Patients with low grade ovarian carcinoma.
+* Patients who have had drainage of their ascites during the final 2 cycles of their last chemotherapy regimen prior to enrolment on the study
+* Patients receiving any chemotherapy, radiotherapy (except for palliative reasons), within 2 weeks from the last dose prior to study entry (or a longer period depending on the defined characteristics of the agents used)."
+NCT01874353,Olaparib Treatment in BRCA Mutated Ovarian Cancer Patients After Complete or Partial Response to Platinum Chemotherapy,ACTIVE_NOT_RECRUITING,"['Platinum Sensitive', 'BRCA Mutated', 'Relapsed Ovarian Cancer', 'Following Complete or Partial Response to Platinum Based Chemotherapy']","[{'type': 'DRUG', 'name': 'Olaparib 300mg tablets', 'description': ""300mg Olaparib or placebo tablets taken orally twice daily until objective radiological disease progression as per RECIST as assessed by the investigator (or as long as in the investigator's opinion they are benefiting from treatment and they do not meet any other discontinuation criteria). Dose reduction to 250mg and subsequently 200mg is permitted following confirmation of toxicity."", 'armGroupLabels': ['Olaparib 300mg tablets']}, {'type': 'DRUG', 'name': 'Placebo to match olaparib 300mg', 'description': ""300mg Olaparib or placebo tablets taken orally twice daily until objective radiological disease progression as per RECIST as assessed by the investigator (or as long as in the investigator's opinion they are benefiting from treatment and they do not meet any other discontinuation criteria). Dose reduction to 250mg and subsequently 200mg is permitted following confirmation of toxicity."", 'armGroupLabels': ['Placebo tablets']}]",INTERVENTIONAL,RANDOMIZED,['PHASE3'],"Inclusion Criteria:
+
+* Patients must be ≥ 18 years of age.
+
+  * Female patients with histologically diagnosed relapsed high grade serous ovarian cancer (including primary peritoneal and / or fallopian tube cancer) or high grade endometrioid cancer.
+  * Documented mutation in BRCA1 or BRCA2 that is predicted to be deleterious or suspected deleterious (known or predicted to be detrimental/lead to loss of function).
+  * Patients who have received at least 2 previous lines of platinum containing therapy prior to randomisation
+
+For the penultimate chemotherapy course prior to enrolment on the study:
+
+• Patient defined as platinum sensitive after this treatment; defined as disease progression greater than 6 months after completion of their last dose of platinum chemotherapy
+
+For the last chemotherapy course immediately prior to randomisation on the study:
+
+* Patients must be, in the opinion of the investigator, in response (partial or complete radiological response), or may have no evidence of disease (if optimal cytoreductive surgery was conducted prior to chemotherapy), and no evidence of a rising CA-125, following completion of this chemotherapy course
+* Patient must have received a platinum based chemotherapy regimen (e.g. carboplatin or cisplatin) and have received at least 4 cycles of treatment
+* Patients must be randomized within 8 weeks of their last dose of chemotherapy
+* Maintenance treatment is allowed at the end of the penultimate platinum regimen, including bevacizumab
+
+Exclusion Criteria:
+
+* Involvement in the planning and/or conduct of the study (applies to both AstraZeneca staff and/or staff at the study site).
+* BRCA 1 and/or BRCA2 mutations that are considered to be non detrimental (e.g., ""Variants of uncertain clinical significance"" or ""Variant of unknown significance"" or ""Variant, favor polymorphism"" or ""benign polymorphism"" etc.)
+* Patients who have had drainage of their ascites during the final 2 cycles of their last chemotherapy regimen prior to enrolment on the study."
