@@ -17,8 +17,12 @@ def _script_dir() -> str:
         return os.getcwd()
 
 
+API_KEY_PATH = os.path.join(_script_dir(), "api_key.txt")
 OUTPUT_DIR = os.path.join(_script_dir(), "meta_result")
 DEFAULT_META_CSV = os.path.join(_script_dir(), "example_meta.csv")
+OUTPUT_ROOT_DIR = os.path.join(_script_dir(), "output", "weighted_meta_analysis")
+RUN_OUTPUT_ID = __import__("time").strftime("%Y%m%d_%H%M%S")
+RUN_OUTPUT_DIR = os.path.join(OUTPUT_ROOT_DIR, RUN_OUTPUT_ID)
 
 # Global key 
 api_key_openai: str = ""
@@ -29,6 +33,12 @@ llm_rule_registry: Dict[str, Callable] = {}
 # Registry to store the original string source of the functions
 llm_rule_sources: Dict[str, str] = {}
 
+artifact_counters: Dict[str, int] = {
+    "extract_criteria": 0,
+    "generate_function_plan_from_rule": 0,
+    "generate_function_from_plan": 0,
+}
+
 
 def _read_input(prompt: str, required: bool = False) -> str:
     val = input(prompt).strip()
@@ -38,6 +48,73 @@ def _read_input(prompt: str, required: bool = False) -> str:
         print("Error: this input is required. Aborting.", file=sys.stderr)
         sys.exit(1)
     return val
+
+
+def load_api_key(path: str = API_KEY_PATH) -> str:
+    if not os.path.exists(path):
+        print(f"Error: API key file not found at {path}.", file=sys.stderr)
+        sys.exit(1)
+
+    with open(path, "r", encoding="utf-8") as f:
+        key = f.read().strip()
+
+    if not key:
+        print(f"Error: API key file is empty at {path}.", file=sys.stderr)
+        sys.exit(1)
+
+    return key
+
+
+def _ensure_parent_dir(path: str) -> None:
+    parent = os.path.dirname(path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+
+
+def _sanitize_filename(value: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "_", value.strip())
+    return cleaned.strip("._") or "artifact"
+
+
+def _next_artifact_index(name: str) -> int:
+    artifact_counters[name] = artifact_counters.get(name, 0) + 1
+    return artifact_counters[name]
+
+
+def _write_json_artifact(relative_path: str, payload: Any) -> str:
+    path = os.path.join(RUN_OUTPUT_DIR, relative_path)
+    _ensure_parent_dir(path)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+    return path
+
+
+def _write_csv_artifact(relative_path: str, df: pd.DataFrame) -> str:
+    path = os.path.join(RUN_OUTPUT_DIR, relative_path)
+    _ensure_parent_dir(path)
+    df.to_csv(path, index=False)
+    return path
+
+
+def _write_text_artifact(relative_path: str, text: str) -> str:
+    path = os.path.join(RUN_OUTPUT_DIR, relative_path)
+    _ensure_parent_dir(path)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
+    return path
+
+
+def _initialize_run_output() -> None:
+    os.makedirs(RUN_OUTPUT_DIR, exist_ok=True)
+    _write_text_artifact("latest_run.txt", RUN_OUTPUT_DIR + "\n")
+    _write_json_artifact(
+        "run_metadata.json",
+        {
+            "run_output_dir": RUN_OUTPUT_DIR,
+            "meta_result_dir": OUTPUT_DIR,
+            "default_meta_csv": DEFAULT_META_CSV,
+        },
+    )
 
 
 def ensure_example_meta_csv(path: str = DEFAULT_META_CSV) -> None:
@@ -435,7 +512,17 @@ Return only valid JSON with this schema:
 
     arguments_str = response.choices[0].message.function_call.arguments
     result = json.loads(arguments_str)
-    return result["criteria"]
+    criteria = result["criteria"]
+    idx = _next_artifact_index("extract_criteria")
+    _write_json_artifact(
+        os.path.join("intermediate", f"01_extract_criteria_{idx:02d}.json"),
+        {
+            "disease": disease,
+            "eligibility_text": eligibility_text,
+            "criteria": criteria,
+        },
+    )
+    return criteria
 
 
 def generate_target_based_rule_descriptions_free_text(
@@ -503,7 +590,17 @@ Eligibility text of prior trials:
     )
 
     rule_list = response.choices[0].message.content.strip()
-    return json.loads(rule_list)
+    parsed_rules = json.loads(rule_list)
+    _write_json_artifact(
+        os.path.join("intermediate", "02_generate_target_based_rule_descriptions_free_text.json"),
+        {
+            "disease": disease,
+            "target_eligibility_text": target_eligibility_text,
+            "prior_trials_eligibility_texts": prior_trials_eligibility_texts,
+            "rule_descriptions": parsed_rules,
+        },
+    )
+    return parsed_rules
 
 
 
@@ -613,7 +710,20 @@ Structured criteria for prior trials:
     )
 
     arguments_str = response.choices[0].message.function_call.arguments
-    return json.loads(arguments_str)
+    plan = json.loads(arguments_str)
+    idx = _next_artifact_index("generate_function_plan_from_rule")
+    func_name = _sanitize_filename(plan.get("penalty_function_name", f"function_plan_{idx:02d}"))
+    _write_json_artifact(
+        os.path.join(
+            "intermediate",
+            f"03_generate_function_plan_from_rule_{idx:02d}_{func_name}.json",
+        ),
+        {
+            "rule_description": rule_description,
+            "plan": plan,
+        },
+    )
+    return plan
 
 
 def generate_function_from_plan(plan: Dict[str, Any]) -> str:
@@ -695,7 +805,17 @@ def generate_function_from_plan(plan: Dict[str, Any]) -> str:
             "    return 0.0",
         ]
 
-    return "\n".join(lines)
+    code = "\n".join(lines)
+    idx = _next_artifact_index("generate_function_from_plan")
+    func_name = _sanitize_filename(plan.get("penalty_function_name", f"generated_function_{idx:02d}"))
+    _write_text_artifact(
+        os.path.join(
+            "generated_functions",
+            f"04_generate_function_from_plan_{idx:02d}_{func_name}.py",
+        ),
+        code,
+    )
+    return code
 
 
 def register_generated_python_function(plan: Dict[str, Any], code_str: str) -> str:
@@ -740,10 +860,12 @@ def main() -> None:
     ensure_example_meta_csv(DEFAULT_META_CSV)
 
     # 1) OpenAI API key
-    key = _read_input("Enter your OpenAI API key: ", required=True)
+    key = load_api_key()
     global api_key_openai
     api_key_openai = key
     os.environ["OPENAI_API_KEY"] = key
+    _initialize_run_output()
+    print(f"Loaded OpenAI API key from {API_KEY_PATH}")
 
     # 2) User CSV path (default example_meta.csv)
     csv_in = _read_input(
@@ -754,11 +876,13 @@ def main() -> None:
 
     print("\n[1/7] Reading input CSV ...")
     meta_df = load_meta_csv(csv_path)
+    _write_csv_artifact("meta_input_normalized.csv", meta_df)
     id_list = meta_df["NCTId"].astype(str).tolist()
     print(f"Loaded {len(meta_df)} row(s) from CSV.")
 
     print("[2/7] Fetching trials from ClinicalTrials.gov by NCT ID ...")
     df = fetch_trials_by_nct_ids(id_list)
+    _write_csv_artifact("fetched_trials.csv", df)
     if df.empty:
         print("Error: no studies were fetched. Aborting.", file=sys.stderr)
         sys.exit(1)
@@ -800,6 +924,17 @@ def main() -> None:
     # 5) Disease input (default cancer)
     disease_in = _read_input("Specify disease type (press Enter for default 'cancer'): ", required=False)
     disease = disease_in if disease_in else "cancer"
+    _write_json_artifact(
+        "run_selection.json",
+        {
+            "csv_path": csv_path,
+            "available_ids": available_ids,
+            "missing_ids": missing_ids,
+            "target_trial_id": target_trial_id,
+            "prior_trial_ids": prior_trial_ids,
+            "disease": disease,
+        },
+    )
 
     print("\n[3/7] Extracting eligibility text and structured criteria ...")
     eligibility_dict: Dict[str, str] = {}
@@ -808,6 +943,7 @@ def main() -> None:
         if row.empty:
             continue
         eligibility_dict[trial_id] = _safe_eligibility_text(row["Eligibility"].iloc[0])
+    _write_json_artifact("eligibility_text_by_trial.json", eligibility_dict)
 
     crit_out_dict: Dict[str, List[Dict[str, Any]]] = {}
     for trial_id in available_ids:
@@ -817,6 +953,7 @@ def main() -> None:
             disease=disease,
             model="gpt-4o",
         )
+    _write_json_artifact("criteria_by_trial.json", crit_out_dict)
 
     target_criteria = crit_out_dict[target_trial_id]
     target_text = eligibility_dict[target_trial_id]
@@ -829,6 +966,7 @@ def main() -> None:
         prior_trials_eligibility_texts=prior_trials_text,
         disease=disease,
     )
+    _write_json_artifact("rule_dscriptions.json", rule_descriptions)
 
     function_plans: List[Dict[str, Any]] = []
     for i, rule_description in enumerate(rule_descriptions, start=1):
@@ -838,6 +976,7 @@ def main() -> None:
             prior_structured_criteria_list=prior_criteria_list,
         )
         function_plans.append(plan)
+    _write_json_artifact("function_plans.json", function_plans)
 
     print("[5/7] Registering generated penalty functions ...")
     clear_registered_rules()
@@ -869,6 +1008,7 @@ def main() -> None:
     print("\nSummed penalties:")
     for trial_id, total_penalty in summed_penalties.items():
         print(f"  {trial_id}: {total_penalty}")
+    _write_json_artifact("summed_penalties.json", summed_penalties)
 
     print("\n[7/7] Saving outputs ...")
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -887,11 +1027,13 @@ def main() -> None:
 
     with open(paths["all_penalties"], "w", encoding="utf-8") as f:
         json.dump(all_penalties, f, indent=2, ensure_ascii=False)
+    _write_json_artifact("all_penalties.json", all_penalties)
 
     print("Done. Saved files:")
     print(f"  - {paths['rule_dscriptions']}")
     print(f"  - {paths['function_plans']}")
     print(f"  - {paths['all_penalties']}")
+    print(f"Mirrored outputs and intermediate planning artifacts are in {RUN_OUTPUT_DIR}")
 
 
 if __name__ == "__main__":
