@@ -1,7 +1,0 @@
-[
-  "Include trials that study pancreatic cancer.",
-  "Include trials that investigate targeted therapies.",
-  "Include trials that investigate immunotherapies.",
-  "Exclude trials that do not deal with pancreatic cancer.",
-  "Exclude trials that do not involve targeted therapies or immunotherapies."
-]

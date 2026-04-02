@@ -1,3 +1,5 @@
 .venv/
 api_key.txt
 __pycache__/
+codex result/raw/
+depreciated/

@@ -1,8 +1,0 @@
-[
-  "Include trials that study pancreatic cancer.",
-  "Include trials that investigate targeted therapies or immunotherapies.",
-  "Include trials that report survival outcomes such as progression-free survival (PFS) or overall survival (OS).",
-  "Include trials that enroll biomarker-stratified populations, including but not limited to HER2-positive, MSI-H, or PD-L1 positive.",
-  "Exclude phase III trials with fewer than 100 patients enrolled.",
-  "Include trials whose drugs under investigation are FDA-approved."
-]
