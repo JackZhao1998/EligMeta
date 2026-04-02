@@ -1,50 +1,47 @@
 # TrialSynthGPT
-Official Codebase for TrialSynthGPT
 
-# Landscape Analysis Script
+Official codebase for TrialSynthGPT.
 
-Minimal usage guide for `landscape_analysis.py`.
+## Main Scripts
 
-## Command line
+- `landscape_analysis.py`: interactive LLM-assisted trial landscape filtering.
+- `weighted_meta_analysis.py`: weighted meta-analysis workflow.
+- `codex result/build_ctg_gastric_gej_baseline.py`: baseline gastric/GEJ CTG pipeline that writes curated Excel outputs.
+- `codex result/build_filter_flow_excel.py`: builds filter-flow reporting workbook.
 
-Run the script:
+## Run
 
 ```bash
 python landscape_analysis.py
 ```
 
-## Interactive inputs
+## Interactive Inputs (`landscape_analysis.py`)
 
-The script is interactive and will ask for the following:
+1. OpenAI API key (required)
+2. `user_intent` (optional)
+3. `comment` (optional)
+4. `Condition` (optional, inferred default is supported)
+5. `Treatment` (optional, inferred default is supported)
 
-1. **OpenAI API key** (required)
-   - Used for all LLM calls.
+## Current Output Structure
 
-2. **user_intent** (optional)
-   - Free‑text description of the analysis goal.
-   - Press Enter to use the built‑in default template.
+### Root `output/`
 
-3. **comment** (optional)
-   - Additional instructions to refine the rule generation.
+The main analysis pipeline writes intermediate and final CSV/JSON artifacts to:
 
-4. **Condition** (optional)
-   - Suggested from the LLM‑derived rules; press Enter to accept the inferred default.
+- `output/original_df_full.csv`
+- `output/df_prefiltered.csv`
+- `output/df_filtered.csv`
+- `output/failure_df.csv`
+- `output/rules.json`
+- `output/plans_dict.json`
+- `output/landscape_table.csv`
 
-5. **Treatment** (optional)
-   - Suggested from the LLM‑derived rules; press Enter to accept the inferred default.
+### `codex result/output/`
 
+The CTG baseline workflow writes Excel deliverables to:
 
-## Outputs
+- `codex result/output/ctg_gastric_gej_landscape.xlsx`
+- `codex result/output/ctg_gastric_gej_run_errors.xlsx`
 
-All outputs are written under `./landscape_result`:
-
-- `original_df_full.csv` — raw trials returned by ClinicalTrials.gov
-- `df_prefiltered.csv` — after built‑in prefilters
-- `df_filtered.csv` — after LLM‑generated filters
-- `failure_df.csv` — rows excluded by each rule
-- `rules.json` — LLM‑generated selection rules
-- `plans_dict.json` — structured filter plans
-- `landscape_table.csv` — final landscape analysis table
-
-The script prints the final table path when done.
-
+For details on that baseline workflow, see `codex result/README.md`.

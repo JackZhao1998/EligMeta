@@ -2,4 +2,6 @@
 api_key.txt
 __pycache__/
 codex result/raw/
+output/
+codex result/output/
 depreciated/
