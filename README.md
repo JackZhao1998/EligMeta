@@ -1,6 +1,6 @@
-# TrialSynthGPT
+# EligMeta
 
-Official codebase for TrialSynthGPT.
+Official codebase for EligMeta.
 
 ## Main Scripts
 
